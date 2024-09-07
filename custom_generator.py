@@ -1,20 +1,31 @@
 import os 
-import numpy as np 
+import numpy as np
+from Processing_tools import tranform_nii_to_npy
 
 
-def load_images(img_dir, img_list):
+def load_images(subset_subjects_paths):
     images = list()
-    for i, image_name in enumerate(img_list):
-        if (image_name.split(".")[1] == "npy"):
-            image = np.load(img_dir + image_name)
-            images.append(image)
+    masks = list()
+    for sub in subset_subjects_paths:
+        curr_volumes_paths = list() 
+        for filename in os.listdir(sub):
+            if "seg" in filename or "Seg" in filename : # due to the misnaming that exists in the dataset 
+                curr_mask_path = os.path.join(sub, filename)    
+            else:
+                whole_path = os.path.join(sub, filename)
+                curr_volumes_paths.append(whole_path)
+        
+        image, mask = tranform_nii_to_npy(curr_volumes_paths, curr_mask_path)
+        images.append(image)
+        masks.append(mask)
+    
+    images = np.array(images, dtype = np.float32)
+    masks = np.array(masks, dtype = np.float32)
+    return (images, masks) 
 
-    images = np.array(images)
-    return images 
 
-
-def imageLoader(img_dir, img_list, mask_dir, mask_list, batch_size):
-    L = len(img_list)
+def imageLoader(subjects_list_paths, batch_size):
+    L = len(subjects_list_paths)
 
     while True:
         batch_start = 0 
@@ -23,10 +34,9 @@ def imageLoader(img_dir, img_list, mask_dir, mask_list, batch_size):
         while batch_start< L:
             upper_limit = min(batch_end, L)
 
-            X = load_images(img_dir, img_list[batch_start:upper_limit])
-            Y = load_images(mask_dir, mask_list[batch_start:upper_limit])
+            X, Y = load_images(subjects_list_paths[batch_start:upper_limit])
             
             yield (X, Y) # batches generated on the fly  (for defining generator)
 
             batch_start += batch_size
-            batch_end += batch_size 
+            batch_end += batch_size
