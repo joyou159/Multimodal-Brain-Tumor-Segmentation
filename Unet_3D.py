@@ -60,20 +60,3 @@ def Unet_3D_multiclass(width, height, depth, channels, num_classes):
     model = tf.keras.Model(inputs = [input], outputs = [output])
 
     return model  
-
-
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    
